@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if device %}
+    <h1>Данные устройства #{{ device.id }}</h1>
+{% else %}
+    <h1>Данные устройства #{{id}}</h1>
+{% endif %}
+
+<table>
+    <tr>
+        <th>Значение</th>
+        <th>X</th>
+        <th>Y</th>
+        <th>Z</th>
+    </tr>
+    <tr>
+        <td>Минимальное</td>
+        <td>{{ analysis.min_x }}</td>
+        <td>{{ analysis.min_y }}</td>
+        <td>{{ analysis.min_z }}</td>
+    </tr>
+    <tr>
+        <td>Максимальное</td>
+        <td>{{ analysis.max_x }}</td>
+        <td>{{ analysis.max_y }}</td>
+        <td>{{ analysis.max_z }}</td>
+    </tr>
+    <tr>
+        <td>Среднее</td>
+        <td>{{ analysis.avg_x }}</td>
+        <td>{{ analysis.avg_y }}</td>
+        <td>{{ analysis.avg_z }}</td>
+    </tr>
+    <tr>
+        <td>Сумма</td>
+        <td>{{ analysis.sum_x }}</td>
+        <td>{{ analysis.sum_y }}</td>
+        <td>{{ analysis.sum_z }}</td>
+    </tr>
+    <tr>
+        <td>Медиана</td>
+        <td>{{ analysis.median_x }}</td>
+        <td>{{ analysis.median_y }}</td>
+        <td>{{ analysis.median_z }}</td>
+    </tr>
+    <tr>
+        <td>Количество записей</td>
+        <td colspan=3>{{ analysis.count}}</td>
+    </tr>
+</table>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<table class="table">
+    <tr>
+        <th>ID</th>
+        <td>{{ data.id }}</td>
+    </tr>
+    <tr>
+        <th>ID устройства</th>
+        <td><a href="/devices/{{ data.id_device }}">{{ data.id_device }}</a></td>
+    </tr>
+    <tr>
+        <th>Время отправки</th>
+        <td>{{ data.time }}</td>
+    </tr>
+    <tr>
+        <th>X</th>
+        <td>{{ data.x }}</td>
+    </tr>
+    <tr>
+        <th>Y</th>
+        <td>{{ data.y }}</td>
+    </tr>
+    <tr>
+        <th>Z</th>
+        <td>{{ data.z }}</td>
+    </tr>
+</table>
+
+<a href="/data/" class="btn btn-secondary">
+    Вернуться на список всех записей
+</a>
+{% endblock %}

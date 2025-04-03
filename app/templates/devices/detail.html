@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Устройство: #{{ device.id }}</h1>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <td>{{ device.id }}</td>
+    </tr>
+    <tr>
+        <th>Время добавления устроства</th>
+        <td>{{ device.addition_time }}</td>
+    </tr>
+</table>
+
+<h2>Данные по устройству</h2>
+<a href="/devices/{{ device.id }}/data">Посмотреть все записи</a>
+{% endblock %}

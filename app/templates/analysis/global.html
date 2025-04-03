@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ title }}</h1>
+    
+    {% if start_time or end_time %}
+    <div class="alert alert-info">
+        {% if start_time %}
+        <strong>From:</strong> {{ start_time.strftime('%Y-%m-%d %H:%M') }}
+        {% endif %}
+        {% if end_time %}
+        <strong>To:</strong> {{ end_time.strftime('%Y-%m-%d %H:%M') }}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        {% for axis in ['x', 'y', 'z'] %}
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Значение {{ axis|upper }}</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr><td>Минимальное:</td><td>{{ "%.2f"|format(analysis|attr('min_' + axis)) }}</td></tr>
+                        <tr><td>Максимальное:</td><td>{{ "%.2f"|format(analysis|attr('max_' + axis)) }}</td></tr>
+                        <tr><td>Среднее:</td><td>{{ "%.2f"|format(analysis|attr('avg_' + axis)) }}</td></tr>
+                        <tr><td>Сумма:</td><td>{{ "%.2f"|format(analysis|attr('sum_' + axis)) }}</td></tr>
+                        <tr><td>Медиана:</td><td>{{ "%.2f"|format(analysis|attr('median_' + axis)) }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Всего записей</h5>
+            <p class="display-4">{{ analysis.count }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

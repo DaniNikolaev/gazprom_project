@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    
+    <h2>Доступные Эндпоинты:</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Эндпоинт</th>
+                <th>Описание</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for endpoint, description in endpoints.items() %}
+            <tr>
+                <td>{% if '{id}' in endpoint %}
+                        <a href="{{ endpoint.replace('{id}', '1') }}">{{ endpoint }}</a>
+                    {% else %}
+                        <a href="{{ endpoint }}">{{ endpoint }}</a>
+                    {% endif %}</td>
+                <td>{{ description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

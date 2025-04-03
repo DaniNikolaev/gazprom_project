@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Список устройств</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Время добавления устройства</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for device in devices %}
+        <tr>
+            <td><a href="/devices/{{ device.id }}">{{ device.id }}</a></td>
+            <td>{{ device.addition_time }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
