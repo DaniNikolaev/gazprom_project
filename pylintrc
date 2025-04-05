@@ -13,5 +13,7 @@ ignore=
     .idea,
     .pytest_cache
     .venv,
+    app/schemas.py
+    app/models.py
     __pycache__,
     venv
