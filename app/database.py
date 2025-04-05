@@ -2,20 +2,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Формат подключения к SQLite
-SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"  # Файл БД будет создан в той же директории
 
-# Создаем движок SQLAlchemy
+SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
+
+
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False}  # Нужно только для SQLite
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False}
 )
 
-# Фабрика сессий
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Базовый класс для моделей
+
 Base = declarative_base()
+
 
 def get_db():
     """
@@ -28,6 +29,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 def init_db():
     """

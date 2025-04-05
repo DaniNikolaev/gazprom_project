@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
+from pydantic import BaseModel
 from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from .database import Base  # Предполагается, что Base - это declarative_base()
+from .database import Base
 
 
 class Device(Base):
@@ -37,10 +38,6 @@ class Data(Base):
         return f"<Data(id={self.id}, x={self.x}, y={self.y}, z={self.z}, time={self.time})>"
 
 
-# Pydantic модели для запросов и ответов API
-from pydantic import BaseModel
-
-
 class DeviceBase(BaseModel):
     """Базовая модель устройства"""
 
@@ -50,7 +47,6 @@ class DeviceBase(BaseModel):
 
 class DeviceCreate(DeviceBase):
     """Модель для создания устройства"""
-    pass  # Можно добавить дополнительные поля при необходимости
 
 
 class DeviceResponse(DeviceBase):

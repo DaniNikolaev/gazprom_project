@@ -20,7 +20,7 @@ from .crud import (
     get_all_data_analysis
 )
 
-# Определяем абсолютный путь к шаблонам
+
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
@@ -28,7 +28,6 @@ app = FastAPI(title="Device Monitoring API", version="1.0")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
-# Главная страница
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def root(request: Request):
     return templates.TemplateResponse(
@@ -36,7 +35,6 @@ async def root(request: Request):
         {
             "request": request,
             "title": "API сервиса мониторинга устройств",
-            "message": "Добро пожаловать на сервис мониторинга устройств",
             "endpoints": {
                 "/devices": "Список всех устройств",
                 "/devices/{id}": "Детальное описание устройства",
@@ -49,7 +47,6 @@ async def root(request: Request):
     )
 
 
-# HTML Endpoints
 @app.get("/devices", response_class=HTMLResponse, include_in_schema=False)
 async def list_devices_html(
         request: Request,
@@ -221,7 +218,6 @@ async def get_device_analysis_html(
     )
 
 
-# JSON API Endpoints
 @app.post("/api/devices", response_model=schemas.DeviceResponse)
 async def create_device_api(db: Session = Depends(get_db)):
     """Create a new device"""
@@ -311,7 +307,7 @@ async def get_global_analysis(
     Получение агрегированной аналитики по всем данным
     Поддерживает фильтрацию по временному диапазону
     """
-    return get_device_analysis(
+    return get_all_data_analysis(
         db,
         start_time=start_time,
         end_time=end_time

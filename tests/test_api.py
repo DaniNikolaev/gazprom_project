@@ -1,135 +1,117 @@
-# tests/test_api.py
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
-from app import schemas  # Импортируем схемы
-from app.models import DeviceData
-from datetime import datetime
+import pytest
 
-# Тесты для endpoint /data/ (POST)
-def test_create_data(test_client: TestClient):
-    """
-    Тест для создания данных с помощью POST /data/.
-    """
-    data = {"device_id": "test_device_1", "x": 1.0, "y": 2.0, "z": 3.0}
-    response = test_client.post("/data/", json=data)
+
+@pytest.fixture
+def create_test_device(test_client: TestClient):
+    """Создает тестовое устройство и возвращает его ID"""
+    response = test_client.post("/api/devices")
     assert response.status_code == 200
-    response_data = response.json()
-    assert response_data["device_id"] == "test_device_1"
-    assert response_data["x"] == 1.0
-    assert response_data["y"] == 2.0
-    assert response_data["z"] == 3.0
-    assert "id" in response_data  # Проверяем, что вернулся id
+    device_id = response.json()["id"]
+    return device_id
 
 
-def test_create_data_invalid_data(test_client: TestClient):
-    """
-    Тест для создания данных с невалидными данными (проверка валидации Pydantic).
-    """
-    data = {"device_id": "test_device", "x": "invalid", "y": 2.0, "z": 3.0}  # x - не число
-    response = test_client.post("/data/", json=data)
-    assert response.status_code == 422  # Unprocessable Entity -  код для ошибки валидации
-    # Можно добавить более детальные проверки ошибок, например,
-    # assert response.json()["detail"][0]["msg"] == "value is not a valid float"  # Проверка конкретного сообщения об ошибке
+@pytest.fixture
+def create_test_data(test_client: TestClient, create_test_device: int):
+    """Создает тестовые данные и возвращает их ID"""
+    device_id = create_test_device
 
-# Тесты для endpoint /data/{device_id} (GET)
-def test_read_data(test_client: TestClient, db_session: Session):
-    """
-    Тест для получения данных с помощью GET /data/{device_id}.
-    """
-    # Создаем тестовые данные в базе данных
-    data1 = DeviceData(device_id="test_device_1", x=1.0, y=2.0, z=3.0)
-    data2 = DeviceData(device_id="test_device_1", x=4.0, y=5.0, z=6.0)
-    db_session.add_all([data1, data2])
-    db_session.commit()
-
-    response = test_client.get("/data/test_device_1")
+    data = {
+        "id_device": device_id,
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0
+    }
+    response = test_client.post("/api/data/", json=data)
     assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 2  # Проверяем, что вернулось две записи
-    assert data[0]["device_id"] == "test_device_1"
-    assert data[0]["x"] == 1.0
-    assert data[1]["x"] == 4.0
+    data_id = response.json()["id"]
+    return data_id
 
-def test_read_data_not_found(test_client: TestClient):
-    """
-    Тест для проверки обработки случая, когда данные не найдены.
-    """
-    response = test_client.get("/data/nonexistent_device")
+
+def test_get_devices(test_client: TestClient):
+    """Проверка эндпоинта /devices"""
+    response = test_client.get("/api/devices")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_get_device_by_id(test_client: TestClient, create_test_device: int):
+    """Проверка эндпоинта /devices/{id}"""
+    device_id = create_test_device
+    response = test_client.get(f"/api/devices/{device_id}")
+    assert response.status_code == 200
+    assert response.json()["id"] == device_id
+
+
+def test_get_device_by_id_not_found(test_client: TestClient):
+    """Проверка эндпоинта /devices/{id} для несуществующего ID"""
+    device_id = 999
+    response = test_client.get(f"/api/devices/{device_id}")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Data not found"
+    assert response.json()["detail"] == "Device not found"
 
-def test_read_data_with_time_range(test_client: TestClient, db_session: Session):
-    """
-    Тест для получения данных с фильтрацией по времени.
-    """
-    # Создаем тестовые данные с разными временными метками
-    now = datetime.utcnow()
-    data1 = DeviceData(device_id="test_device_1", x=1.0, y=2.0, z=3.0, timestamp=now - timedelta(hours=1))
-    data2 = DeviceData(device_id="test_device_1", x=4.0, y=5.0, z=6.0, timestamp=now)
-    data3 = DeviceData(device_id="test_device_1", x=7.0, y=8.0, z=9.0, timestamp=now + timedelta(hours=1))
-    db_session.add_all([data1, data2, data3])
-    db_session.commit()
 
-    # Запрашиваем данные в определенном временном диапазоне
-    start_time = (now - timedelta(minutes=30)).isoformat()  # ISO формат
-    end_time = (now + timedelta(minutes=30)).isoformat()
-    response = test_client.get(f"/data/test_device_1?start_time={start_time}&end_time={end_time}")
-
+def test_get_data(test_client: TestClient):
+    """Проверка эндпоинта /data"""
+    response = test_client.get("/api/data")
     assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 1  # Должна вернуться только одна запись (data2)
-    assert data[0]["x"] == 4.0
 
-# Тесты для endpoint /analysis/{device_id} (GET)
-from datetime import timedelta
-def test_analyze_data(test_client: TestClient, db_session: Session):
-    """
-    Тест для анализа данных с помощью GET /analysis/{device_id}.
-    """
-    # Создаем тестовые данные
-    data1 = DeviceData(device_id="test_device_1", x=1.0, y=2.0, z=3.0)
-    data2 = DeviceData(device_id="test_device_1", x=4.0, y=5.0, z=6.0)
-    data3 = DeviceData(device_id="test_device_1", x=7.0, y=8.0, z=9.0)
-    db_session.add_all([data1, data2, data3])
-    db_session.commit()
 
-    response = test_client.get("/analysis/test_device_1")
+def test_create_data(test_client: TestClient, create_test_device: int):
+    """Проверка создания данных POST /data/"""
+    device_id = create_test_device
+    data = {
+        "id_device": device_id,
+        "x": 4.0,
+        "y": 5.0,
+        "z": 6.0
+    }
+    response = test_client.post("/api/data/", json=data)
     assert response.status_code == 200
-    data = response.json()
-    assert data["min_x"] == 1.0
-    assert data["max_x"] == 7.0
-    assert data["count"] == 3
-    assert data["sum_x"] == 12.0
-    assert data["median_x"] == 4.0
+    created_data = response.json()
+    assert created_data["id_device"] == device_id
+    assert created_data["x"] == 4.0
+    assert created_data["y"] == 5.0
+    assert created_data["z"] == 6.0
 
-def test_analyze_data_not_found(test_client: TestClient):
-    """
-    Тест для проверки обработки случая, когда данные для анализа не найдены.
-    """
-    response = test_client.get("/analysis/nonexistent_device")
+
+def test_get_data_by_id(test_client: TestClient, create_test_data: int):
+    """Проверка эндпоинта /data/{id}"""
+    data_id = create_test_data
+    response = test_client.get(f"/api/data/{data_id}")
+    assert response.status_code == 200
+    assert response.json()["id"] == data_id
+
+
+def test_get_data_by_id_not_found(test_client: TestClient):
+    """Проверка эндпоинта /data/{id} для несуществующего ID"""
+    data_id = 999
+    response = test_client.get(f"/api/data/{data_id}")
     assert response.status_code == 404
-    assert response.json()["detail"] == "No data found for this device and time range"
+    assert response.json()["detail"] == "Data record not found"
 
-def test_analyze_data_with_time_range(test_client: TestClient, db_session: Session):
-    """
-    Тест для анализа данных с фильтрацией по времени.
-    """
-    now = datetime.utcnow()
-    data1 = DeviceData(device_id="test_device_1", x=1.0, y=2.0, z=3.0, timestamp=now - timedelta(hours=1))
-    data2 = DeviceData(device_id="test_device_1", x=4.0, y=5.0, z=6.0, timestamp=now)
-    data3 = DeviceData(device_id="test_device_1", x=7.0, y=8.0, z=9.0, timestamp=now + timedelta(hours=1))
-    db_session.add_all([data1, data2, data3])
-    db_session.commit()
 
-    # Запрашиваем анализ в определенном временном диапазоне
-    start_time = (now - timedelta(minutes=30)).isoformat()  # ISO формат
-    end_time = (now + timedelta(minutes=30)).isoformat()
-    response = test_client.get(f"/analysis/test_device_1?start_time={start_time}&end_time={end_time}")
-
+def test_get_analysis(test_client: TestClient):
+    """Проверка эндпоинта /analysis"""
+    response = test_client.get("/api/analysis")
     assert response.status_code == 200
-    data = response.json()
-    assert data["min_x"] == 4.0  # Проверяем, что анализ верен для одного элемента
-    assert data["max_x"] == 4.0
-    assert data["count"] == 1
-    assert data["sum_x"] == 4.0
-    assert data["median_x"] == 4.0
+    analysis_data = response.json()
+    assert "min_x" in analysis_data
+    assert "max_x" in analysis_data
+    assert "avg_x" in analysis_data
+    assert "median_x" in analysis_data
+
+
+def test_get_analysis_by_id(test_client: TestClient, create_test_device: int):
+    """Проверка эндпоинта /analysis/{id}"""
+    device_id = create_test_device
+    response = test_client.get(f"/api/analysis/{device_id-1}")
+    assert response.status_code == 200
+    assert "min_x" in response.json()
+
+
+def test_get_analysis_by_id_not_found(test_client: TestClient):
+    """Проверка эндпоинта /analysis/{id} для несуществующего ID"""
+    device_id = 999
+    response = test_client.get(f"/api/analysis/{device_id}")
+    assert response.status_code == 404

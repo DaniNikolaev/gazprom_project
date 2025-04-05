@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
 from . import models, schemas
 
 
-# Device operations
 def create_device(db: Session):
     """Создание нового устройства"""
     db_device = models.Device(addition_time=datetime.utcnow())
@@ -58,90 +58,110 @@ def get_device_data(
 
     return query.offset(skip).limit(limit).all()
 
+
 def get_data_by_id(db: Session, data_id: int):
     """Получить запись данных по ID"""
     return db.query(models.Data).filter(models.Data.id == data_id).first()
 
 
+def calculate_median(values: List[float]) -> Optional[float]:
+    """Вычисление медианы списка значений"""
+    if not values:
+        return None
+    sorted_values = sorted(values)
+    n = len(sorted_values)
+    if n % 2 == 0:
+        mid1 = sorted_values[n // 2 - 1]
+        mid2 = sorted_values[n // 2]
+        median = (mid1 + mid2) / 2
+    else:
+        median = sorted_values[n // 2]
+    return median
+
+
 def get_device_analysis(
         db: Session,
-        device_id: int = None,
+        device_id: int,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
-):
-    """Аналитика данных устройства с приблизительной медианой"""
-    result = db.query(
-        # Мертики для X
-        func.min(models.Data.x).label("min_x"),
-        func.max(models.Data.x).label("max_x"),
-        func.avg(models.Data.x).label("avg_x"),
-        func.sum(models.Data.x).label("sum_x"),
+) -> schemas.AnalysisResult:
+    """Аналитика данных устройства"""
+    data = get_device_data(db, device_id, start_time, end_time)
+    if not data:
+        raise HTTPException(status_code=404, detail="No data found for this device and time range")
 
-        # Мертики для Y
-        func.min(models.Data.y).label("min_y"),
-        func.max(models.Data.y).label("max_y"),
-        func.avg(models.Data.y).label("avg_y"),
-        func.sum(models.Data.y).label("sum_y"),
+    x_values = [item.x for item in data]
+    y_values = [item.y for item in data]
+    z_values = [item.z for item in data]
+    total_count = len(data)
 
-        # Мертики для Z
-        func.min(models.Data.z).label("min_z"),
-        func.max(models.Data.z).label("max_z"),
-        func.avg(models.Data.z).label("avg_z"),
-        func.sum(models.Data.z).label("sum_z"),
+    analysis_result = schemas.AnalysisResult(
+        min_x=min(x_values) if x_values else None,
+        max_x=max(x_values) if x_values else None,
+        avg_x=sum(x_values) / len(x_values) if x_values else None,
+        sum_x=sum(x_values) if x_values else None,
+        median_x=calculate_median(x_values),
 
-        # Общие метрики
-        func.count(models.Data.id).label("count"),
+        min_y=min(y_values) if y_values else None,
+        max_y=max(y_values) if y_values else None,
+        avg_y=sum(y_values) / len(y_values) if y_values else None,
+        sum_y=sum(y_values) if y_values else None,
+        median_y=calculate_median(y_values),
 
-        # Приблизительная медиана (работает в SQLite)
-        func.avg(models.Data.x).label("median_x"),  # Замена медианы средним
-        func.avg(models.Data.y).label("median_y"),
-        func.avg(models.Data.z).label("median_z")
-    ).filter(models.Data.id_device == device_id)
+        min_z=min(z_values) if z_values else None,
+        max_z=max(z_values) if z_values else None,
+        avg_z=sum(z_values) / len(z_values) if z_values else None,
+        sum_z=sum(z_values) if z_values else None,
+        median_z=calculate_median(z_values),
 
-    if start_time:
-        result = result.filter(models.Data.time >= start_time)
-    if end_time:
-        result = result.filter(models.Data.time <= end_time)
+        total_count=total_count
+    )
+    return analysis_result
 
-    return result.first()
 
 def get_all_data_analysis(
         db: Session,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
-):
-    """Аналитика данных устройства с приблизительной медианой"""
-    result = db.query(
-        # Мертики для X
-        func.min(models.Data.x).label("min_x"),
-        func.max(models.Data.x).label("max_x"),
-        func.avg(models.Data.x).label("avg_x"),
-        func.sum(models.Data.x).label("sum_x"),
+) -> schemas.AnalysisResult:
+    """Аналитика по всем устройствам"""
 
-        # Мертики для Y
-        func.min(models.Data.y).label("min_y"),
-        func.max(models.Data.y).label("max_y"),
-        func.avg(models.Data.y).label("avg_y"),
-        func.sum(models.Data.y).label("sum_y"),
-
-        # Мертики для Z
-        func.min(models.Data.z).label("min_z"),
-        func.max(models.Data.z).label("max_z"),
-        func.avg(models.Data.z).label("avg_z"),
-        func.sum(models.Data.z).label("sum_z"),
-
-        # Общие метрики
-        func.count(models.Data.id).label("count"),
-
-        # Приблизительная медиана (работает в SQLite)
-        func.avg(models.Data.x).label("median_x"),  # Замена медианы средним
-        func.avg(models.Data.y).label("median_y"),
-        func.avg(models.Data.z).label("median_z")
-    )
+    query = db.query(models.Data)
 
     if start_time:
-        result = result.filter(models.Data.time >= start_time)
+        query = query.filter(models.Data.time >= start_time)
     if end_time:
-        result = result.filter(models.Data.time <= end_time)
+        query = query.filter(models.Data.time <= end_time)
 
-    return result.first()
+    data = query.all()
+
+    if not data:
+        raise HTTPException(status_code=404, detail="No data found")
+
+    x_values = [item.x for item in data]
+    y_values = [item.y for item in data]
+    z_values = [item.z for item in data]
+    total_count = len(data)
+
+    analysis_result = schemas.AnalysisResult(
+        min_x=min(x_values) if x_values else None,
+        max_x=max(x_values) if x_values else None,
+        avg_x=sum(x_values) / len(x_values) if x_values else None,
+        sum_x=sum(x_values) if x_values else None,
+        median_x=calculate_median(x_values),
+
+        min_y=min(y_values) if y_values else None,
+        max_y=max(y_values) if y_values else None,
+        avg_y=sum(y_values) / len(y_values) if y_values else None,
+        sum_y=sum(y_values) if y_values else None,
+        median_y=calculate_median(y_values),
+
+        min_z=min(z_values) if z_values else None,
+        max_z=max(z_values) if z_values else None,
+        avg_z=sum(z_values) / len(z_values) if z_values else None,
+        sum_z=sum(z_values) if z_values else None,
+        median_z=calculate_median(z_values),
+
+        total_count=total_count
+    )
+    return analysis_result

@@ -9,4 +9,4 @@ services:
     volumes:
       - .:/app
     environment:
-      DATABASE_URL: "sqlite:///./device_data.db" # Указываем DATABASE_URL для контейнера
+      DATABASE_URL: "sqlite:///./app.db"

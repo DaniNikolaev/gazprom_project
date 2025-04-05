@@ -3,12 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-# Базовые схемы
 class DeviceBase(BaseModel):
     """Базовая схема устройства"""
 
     class Config:
-        from_attributes = True  # Позволяет работать с ORM (ранее orm_mode=True)
+        from_attributes = True
 
 
 class DataBase(BaseModel):
@@ -18,10 +17,8 @@ class DataBase(BaseModel):
         from_attributes = True
 
 
-# Схемы для создания (Create)
 class DeviceCreate(DeviceBase):
     """Схема для создания устройства"""
-    pass  # Можно добавить дополнительные поля при необходимости
 
 
 class DataCreate(DataBase):
@@ -30,7 +27,7 @@ class DataCreate(DataBase):
     y: float
     z: float
     id_device: int
-    time: Optional[datetime] = None  # Если не указано, будет использовано текущее время
+    time: Optional[datetime] = None
 
 
 # Схемы для ответов (Response)
@@ -50,28 +47,24 @@ class DataResponse(DataBase):
     id_device: int
 
 
-# Схемы для аналитики
 class AnalysisResult(BaseModel):
     """Схема результата анализа"""
-    min_x: Optional[float] = None
-    max_x: Optional[float] = None
-    avg_x: Optional[float] = None
-    sum_x: float
-    median_x: Optional[float] = None
+    min_x: Optional[float] = 0.0
+    max_x: Optional[float] = 0.0
+    avg_x: Optional[float] = 0.0
+    sum_x: Optional[float] = 0.0
+    median_x: Optional[float] = 0.0
 
-    min_y: Optional[float] = None
-    max_y: Optional[float] = None
-    avg_y: Optional[float] = None
-    sum_y: float
-    median_y: Optional[float] = None
+    min_y: Optional[float] = 0.0
+    max_y: Optional[float] = 0.0
+    avg_y: Optional[float] = 0.0
+    sum_y: Optional[float] = 0.0
+    median_y: Optional[float] = 0.0
 
-    min_z: Optional[float] = None
-    max_z: Optional[float] = None
-    avg_z: Optional[float] = None
-    sum_z: float
-    median_z: Optional[float] = None
+    min_z: Optional[float] = 0.0
+    max_z: Optional[float] = 0.0
+    avg_z: Optional[float] = 0.0
+    sum_z: Optional[float] = 0.0
+    median_z: Optional[float] = 0.0
 
     total_count: Optional[int] = None
-
-
-
