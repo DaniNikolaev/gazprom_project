@@ -25,7 +25,11 @@ jobs:
         run: flake8 .
 
       - name: Run Pylint
+<<<<<<< HEAD
+        run: pylint --rcfile=.pylintrc app
+=======
         run: pylint .
+>>>>>>> b32325824c7948f2feed50803edec121989ac05d
 
   test:
     needs: lint
